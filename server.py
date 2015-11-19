@@ -19,7 +19,7 @@ class SpeedTestHandler(SocketServer.BaseRequestHandler):
         address = self.server.server_address
         log("server(%s,%d):[%s]" % (address[0], address[1], msg))
 
-    def handler(self):
+    def handle(self):
         self.log('connected from:%s,%d' % self.client_address)
         while True:
             self.request.sendall(self.request.recv(ConfigDict["MaxSpeedSocketSize"]))

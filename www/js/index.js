@@ -54,9 +54,10 @@ var app = {
         console.log(socket);
         socket.connect(function(connectionId) {
             console.log('server connected!!!')
+            var date = new Date();
             var time = 0;
             document.addEventListener(socket.receiveHookName, function(ev) {
-                console.log('received,delay:', getTime()-time);
+                console.log('received,delay:', date.getTime()-time);
                 app.receivedEvent('speedtest');
                 socket.disconnect(function() {
                     console.log('server disconnected!!!')
@@ -65,9 +66,9 @@ var app = {
             });
             socket.send(function() {
                 console.log('msg send!!!')
-                time = getTime();
+                time = date.getTime();
             }, function() {
-            }, connectionId, 'hello');
+            }, connectionId, 'hello\n');
         }, function() {
             console.log('server connect failed!!!')
         }, '172.16.101.220', 2046);
