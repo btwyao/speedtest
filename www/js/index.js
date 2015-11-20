@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 var app = {
     // Application Constructor
     initialize: function() {
@@ -34,7 +35,7 @@ var app = {
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
-        app.speedTest();
+        window.location.href = "http://172.16.101.220:3000/speedtest.html";
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {
@@ -46,31 +47,5 @@ var app = {
         receivedElement.setAttribute('style', 'display:block;');
 
         console.log('Received Event: ' + id);
-    },
-    
-    speedTest: function() {
-        console.log('speed test!!!');
-        var socket = window.tlantic.plugins.socket;
-        console.log(socket);
-        socket.connect(function(connectionId) {
-            console.log('server connected!!!')
-            var date = new Date();
-            var time = 0;
-            document.addEventListener(socket.receiveHookName, function(ev) {
-                console.log('received,delay:', date.getTime()-time);
-                app.receivedEvent('speedtest');
-                socket.disconnect(function() {
-                    console.log('server disconnected!!!')
-                }, function() {
-                }, connectionId);
-            });
-            socket.send(function() {
-                console.log('msg send!!!')
-                time = date.getTime();
-            }, function() {
-            }, connectionId, 'hello\n');
-        }, function() {
-            console.log('server connect failed!!!')
-        }, '172.16.101.220', 2046);
     },
 };
