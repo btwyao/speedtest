@@ -17,6 +17,27 @@
  * under the License.
  */
 
+var connectionMap = {};
+var hostMap = {
+    SpeedTest: ['172.16.101.220', 2046],
+    UploadData: ['172.16.101.220', 2048],
+};
+
+var waitForTestSpeedMsg = false;
+var sendTestSpeedMsgTime = 0;
+
+var log = function() {
+    var params = "";
+    for (var i=0; i<arguments.length; i++) {
+        params = params + " " + arguments[i];
+    }
+    var date = new Date();
+    // params = date.toUTCString() + ':' + params;
+    console.log(params);
+    var element = document.getElementById("log");
+    element.value = element.value + params + "\n";
+};
+
 var app = {
     // Application Constructor
     initialize: function() {
@@ -28,6 +49,7 @@ var app = {
     // 'load', 'deviceready', 'offline', and 'online'.
     bindEvents: function() {
         document.addEventListener('deviceready', this.onDeviceReady, false);
+        document.addEventListener(window.tlantic.plugins.socket.receiveHookName, this.onSocketReceive);
     },
     // deviceready Event Handler
     //
@@ -35,7 +57,7 @@ var app = {
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
-        window.location.href = "http://172.16.101.220:3000/speedtest.html";
+        this.speedTest();
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {
@@ -46,6 +68,88 @@ var app = {
         listeningElement.setAttribute('style', 'display:none;');
         receivedElement.setAttribute('style', 'display:block;');
 
-        console.log('Received Event: ' + id);
+        log('Received Event: ' + id);
+    },
+
+    onSocketReceive: function(ev) {
+        var id = ev.metadata.id;
+        if (connectionMap[id] == 'SpeedTest' && waitForTestSpeedMsg) {
+            waitForTestSpeedMsg = false;
+            var date = new Date();
+            log(id, 'received,delay:', date.getTime()-sendTestSpeedMsgTime, ',msg:', data);
+        }
+    },
+
+    connect: function(name, nextFunc) {
+        var socket = window.tlantic.plugins.socket;
+        socket.connect(function(connectionId) {
+            log(connectionId, 'server connected!!!');
+            connectionMap[name] = connectionId;
+            connectionMap[connectionId] = name;
+            nextFunc(true);
+        }, function() {
+            log(connectionId, 'server connect failed!!!');
+            nextFunc(false);
+        }, hostMap[name][0], hostMap[name][1]);
+    },
+
+    speedTest: function() {
+        log('speed test!!!');
+        var socket = window.tlantic.plugins.socket;
+        var newConnection = function(nextFunc) {
+            app.connect('SpeedTest', function(ok) {
+                if (ok) {
+                    nextFunc();
+                } else {
+                    log('connect to speed server failed!!!');
+                }
+            });
+        };
+        var sendMsg = function() {
+            if (waitForTestSpeedMsg) {
+                log('Already send to speed test server, wait!!!');
+                return;
+            }
+            socket.send(function() {
+                waitForTestSpeedMsg = true;
+                log('msg send!!!');
+                var date = new Date();
+                sendTestSpeedMsgTime = date.getTime();
+            }, function() {
+                log('msg send failed!!!', connectionMap['SpeedTest']);
+            }, connectionMap['SpeedTest'], 'hello');
+        };
+        if (!connectionMap['SpeedTest']) {
+            newConnection(sendMsg);
+        } else {
+            socket.isConnected(connectionMap['SpeedTest'], function(ok) {
+                if (!ok) {
+                    newConnection(sendMsg);
+                } else {
+                    sendMsg();
+                }
+            }, function() {
+                log('check connection to speed server failed!!!');
+            });
+        }
+    },
+
+    collectData: function() {
+        var data = {};
+        data['NetworkState'] = navigator.connection.type;
+        return data;
+    },
+
+    uploadTestData: function(networkState, delay) {
+        var socket = window.tlantic.plugins.socket;
+        socket.connect(function(connectionId) {
+            log(connectionId, 'server connected!!!');
+            socket.send(function() {
+                log(connectionId, 'msg send!!!');
+            }, function() {
+            }, connectionId, networkState + ',' + delay);
+        }, function() {
+            log(connectionId, 'server connect failed!!!');
+        }, '172.16.101.220', 2048);
     },
 };
