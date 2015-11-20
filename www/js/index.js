@@ -49,7 +49,7 @@ var app = {
     // 'load', 'deviceready', 'offline', and 'online'.
     bindEvents: function() {
         document.addEventListener('deviceready', this.onDeviceReady, false);
-        document.addEventListener(window.tlantic.plugins.socket.receiveHookName, this.onSocketReceive);
+        document.addEventListener('backbutton', this.onDestroy, false);
     },
     // deviceready Event Handler
     //
@@ -57,7 +57,7 @@ var app = {
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
-        this.speedTest();
+        window.tlantic.plugins.socket.receive = this.onSocketReceive;
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {
@@ -71,8 +71,12 @@ var app = {
         log('Received Event: ' + id);
     },
 
-    onSocketReceive: function(ev) {
-        var id = ev.metadata.id;
+    onDestroy: function() {
+        document.removeEventListener('backbutton', app.onDestroy, false);
+        window.tlantic.plugins.socket.disconnectAll();
+    },
+
+    onSocketReceive: function(host, port, id, data) {
         if (connectionMap[id] == 'SpeedTest' && waitForTestSpeedMsg) {
             waitForTestSpeedMsg = false;
             var date = new Date();
