@@ -160,7 +160,7 @@ var app = {
         }
     },
 
-    uploadTestData: function(networkState, delay) {
+    uploadTestData: function(networkState, delay, env) {
         var testMsg = "本次测速结果："+delay+"ms("+networkState+")";
         app.receivedEvent("测速成功，上传测试数据中");
         log('upload data!!!');
@@ -182,7 +182,7 @@ var app = {
             }, function() {
                 app.receivedEvent("测试数据上传失败，"+testMsg);
                 log('data upload failed!!!', connectionMap['UploadData']);
-            }, connectionMap['UploadData'], networkState + ',' + delay);
+            }, connectionMap['UploadData'], networkState + ',' + delay + ',' + env);
         };
         if (!connectionMap['UploadData']) {
             newConnection(sendMsg);

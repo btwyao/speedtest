@@ -77,12 +77,21 @@ h1 {
 button {
     font-size:50px;
     text-align:center;
-    margin-top:100px;
 }
 
 textarea {
     font-size:30px;
     margin-top:80px;
+}
+
+select {
+    font-size:30px;
+    position:relative;
+    left:30px;
+}
+
+.tips {
+    font-size:25px;
 }
 
 .event {
@@ -92,6 +101,7 @@ textarea {
     width:80%;                   /* text area width */
     position:relative;
     left:10%;
+    margin-bottom:100px;
 }
 
 .event.listening {
