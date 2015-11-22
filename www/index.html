@@ -31,12 +31,22 @@
     </head>
     <body>
         <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/index.js"></script>
+        <script type="text/javascript" src="http://172.16.101.220:3000/js/index.js"></script>
         <div class="app">
             <h1>SpeedTest</h1>
             <div id="speedtest" class="blink">
                 <p class="event listening">初始化中</p>
                 <button onclick="app.speedTest();">开始测速</button>
+                <select name="当前环境" id="selectenv">
+                    <option value="普通" selected>普通</option>
+                    <option value="户外">户外</option>
+                    <option value="室内">室内</option>
+                    <option value="地铁">地铁</option>
+                    <option value="公车">公车</option>
+                    <option value="电梯">电梯</option>
+                    <option value="水下">水下</option>
+                    <option value="火星">火星</option>
+                </select>
             </div>
             <textarea id="log" rows="10" cols="50"></textarea>
         </div>

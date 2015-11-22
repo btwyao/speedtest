@@ -84,20 +84,32 @@ var app = {
             waitForTestSpeedMsg = false;
             var date = new Date();
             var delay = date.getTime()-sendTestSpeedMsgTime;
+            var envElement = document.getElementById("selectenv");
+            var env = envElement.options[envElement.selectedIndex].getAttribute("value");
             log(id, 'received,delay:', delay, ',msg:', data);
-            app.uploadTestData(navigator.connection.type, delay);
+            app.uploadTestData(navigator.connection.type, delay, env);
         }
     },
 
     connect: function(name, nextFunc) {
         var socket = window.tlantic.plugins.socket;
         socket.connect(function(connectionId) {
-            log(connectionId, 'server connected!!!');
-            connectionMap[name] = connectionId;
-            connectionMap[connectionId] = name;
-            nextFunc(true);
-        }, function() {
-            log(connectionId, 'server connect failed!!!');
+            socket.isConnected(connectionId, function(ok) {
+                if (ok) {
+                    log(connectionId, 'server connected!!!');
+                    connectionMap[name] = connectionId;
+                    connectionMap[connectionId] = name;
+                    nextFunc(true);
+                } else {
+                    log(connectionId, 'server connect failed!!!');
+                    nextFunc(false);
+                }
+            }, function(errMsg) {
+                log('check connection to server failed!!!'+errMsg);
+                nextFunc(false);
+            });
+        }, function(errMsg) {
+            log(connectionId, 'server connect failed!!!'+errMsg);
             nextFunc(false);
         }, hostMap[name][0], hostMap[name][1]);
     },
@@ -126,10 +138,10 @@ var app = {
             sendTestSpeedMsgTime = date.getTime();
             waitForTestSpeedMsg = true;
             socket.send(function() {
-            }, function() {
+            }, function(errMsg) {
                 waitForTestSpeedMsg = false;
                 app.receivedEvent("测速失败，请重试")
-                log('msg send failed!!!', connectionMap['SpeedTest']);
+                log('msg send failed!!!'+errMsg, connectionMap['SpeedTest']);
             }, connectionMap['SpeedTest'], 'hello');
         };
         if (!connectionMap['SpeedTest']) {
@@ -141,7 +153,7 @@ var app = {
                 } else {
                     sendMsg();
                 }
-            }, function() {
+            }, function(errMsg) {
                 app.receivedEvent("测试服务器网络异常")
                 log('check connection to speed server failed!!!');
             });
