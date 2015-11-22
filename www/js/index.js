@@ -19,8 +19,8 @@
 
 var connectionMap = {};
 var hostMap = {
-    SpeedTest: ['172.16.101.220', 2046],
-    UploadData: ['172.16.101.220', 2048],
+    SpeedTest: ['203.195.235.217', 2046],
+    UploadData: ['203.195.235.217', 2048],
 };
 
 var waitForTestSpeedMsg = false;
