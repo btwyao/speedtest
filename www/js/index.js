@@ -19,9 +19,14 @@
 
 var connectionMap = {};
 var hostMap = {
-    SpeedTest: ['203.195.235.217', 2046],
-    UploadData: ['203.195.235.217', 2048],
+    SpeedTest: ['112.74.193.129', 2046],
+    UploadData: ['112.74.193.129', 2048],
 };
+
+var speedTestMsg = "hello"
+for (var i=0; i<50; i++) {
+    speedTestMsg = speedTestMsg + "hello";
+}
 
 var waitForTestSpeedMsg = false;
 var sendTestSpeedMsgTime = 0;
@@ -57,10 +62,8 @@ var app = {
         app.receivedEvent("准备就绪")
         window.tlantic.plugins.socket.receive = app.onSocketReceive;
         app.connect('SpeedTest', function(ok) {
-            log('connect to speed server:', ok);
         });
         app.connect('UploadData', function(ok) {
-            log('connect to data server:', ok);
         });
     },
     // Update DOM on a Received Event
@@ -86,7 +89,7 @@ var app = {
             var delay = date.getTime()-sendTestSpeedMsgTime;
             var envElement = document.getElementById("selectenv");
             var env = envElement.options[envElement.selectedIndex].getAttribute("value");
-            log(id, 'received,delay:', delay, ',msg:', data);
+            log(id, 'received,delay:', delay);
             app.uploadTestData(navigator.connection.type, delay, env);
         }
     },
@@ -96,12 +99,10 @@ var app = {
         socket.connect(function(connectionId) {
             socket.isConnected(connectionId, function(ok) {
                 if (ok) {
-                    log(connectionId, 'server connected!!!');
                     connectionMap[name] = connectionId;
                     connectionMap[connectionId] = name;
                     nextFunc(true);
                 } else {
-                    log(connectionId, 'server connect failed!!!');
                     nextFunc(false);
                 }
             }, function(errMsg) {
@@ -142,7 +143,7 @@ var app = {
                 waitForTestSpeedMsg = false;
                 app.receivedEvent("测速失败，请重试")
                 log('msg send failed!!!'+errMsg, connectionMap['SpeedTest']);
-            }, connectionMap['SpeedTest'], 'hello');
+            }, connectionMap['SpeedTest'], speedTestMsg);
         };
         if (!connectionMap['SpeedTest']) {
             newConnection(sendMsg);
