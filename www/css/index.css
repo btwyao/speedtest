@@ -47,7 +47,7 @@ body {
 
 /* Portrait layout (default) */
 .app {
-    background:url(../img/logo.png) no-repeat center top; /* 170px x 200px */
+    background:url(../img/logo.png) no-repeat center 70px; /* 170px x 200px */
     position:absolute;             /* position in the center of the screen */
     top:30%;
     width:100%;                   /* text area width */
@@ -71,27 +71,24 @@ h1 {
     overflow:visible;
     padding:0px;
     text-align:center;
-    margin-bottom:150px;
+    margin-bottom:200px;
 }
 
 button {
     font-size:50px;
     text-align:center;
-    margin-top:50px;
+    margin-top:100px;
 }
 
 textarea {
     font-size:30px;
-    margin-top:100px;
+    margin-top:80px;
 }
 
 .event {
     border-radius:4px;
     color:#FFFFFF;
     font-size:50px;
-    margin:0px 30px;
-    padding:2px 0px;
-    height:55px;                   /* text area height */
     width:80%;                   /* text area width */
     position:relative;
     left:10%;

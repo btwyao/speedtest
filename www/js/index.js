@@ -67,7 +67,7 @@ var app = {
     receivedEvent: function(id) {
         var parentElement = document.getElementById('speedtest');
         var listeningElement = parentElement.querySelector('.listening');
-        listeningElement.value = id;
+        listeningElement.firstChild.nodeValue = id;
     },
 
     onDestroy: function() {
@@ -75,6 +75,7 @@ var app = {
         var func = function() {};
         window.tlantic.plugins.socket.disconnect(func,func,connectionMap["UploadData"]);
         window.tlantic.plugins.socket.disconnect(func,func,connectionMap["SpeedTest"]);
+        navigator.app.exitApp();
     },
 
     onSocketReceive: function(host, port, id, data) {
@@ -120,12 +121,13 @@ var app = {
                 log('Already send to speed test server, wait!!!');
                 return;
             }
+            log('msg send!!!');
             var date = new Date();
             sendTestSpeedMsgTime = date.getTime();
+            waitForTestSpeedMsg = true;
             socket.send(function() {
-                waitForTestSpeedMsg = true;
-                log('msg send!!!');
             }, function() {
+                waitForTestSpeedMsg = false;
                 app.receivedEvent("测速失败，请重试")
                 log('msg send failed!!!', connectionMap['SpeedTest']);
             }, connectionMap['SpeedTest'], 'hello');
@@ -147,7 +149,7 @@ var app = {
     },
 
     uploadTestData: function(networkState, delay) {
-        var testMsg = "本次测速结果："+delay+"("+networkState+")";
+        var testMsg = "本次测速结果："+delay+"ms("+networkState+")";
         app.receivedEvent("测速成功，上传测试数据中");
         log('upload data!!!');
         var socket = window.tlantic.plugins.socket;
