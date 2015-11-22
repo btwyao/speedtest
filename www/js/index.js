@@ -41,6 +41,7 @@ var log = function() {
 var app = {
     // Application Constructor
     initialize: function() {
+        // window.location.href = "http://172.16.101.220:3000/speedtest.html";
         this.bindEvents();
     },
     // Bind Event Listeners
@@ -52,35 +53,38 @@ var app = {
         document.addEventListener('backbutton', this.onDestroy, false);
     },
     // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-        window.tlantic.plugins.socket.receive = this.onSocketReceive;
+        app.receivedEvent("准备就绪")
+        window.tlantic.plugins.socket.receive = app.onSocketReceive;
+        app.connect('SpeedTest', function(ok) {
+            log('connect to speed server:', ok);
+        });
+        app.connect('UploadData', function(ok) {
+            log('connect to data server:', ok);
+        });
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
+        var parentElement = document.getElementById('speedtest');
         var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
-
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
-
-        log('Received Event: ' + id);
+        listeningElement.value = id;
     },
 
     onDestroy: function() {
         document.removeEventListener('backbutton', app.onDestroy, false);
-        window.tlantic.plugins.socket.disconnectAll();
+        var func = function() {};
+        window.tlantic.plugins.socket.disconnect(func,func,connectionMap["UploadData"]);
+        window.tlantic.plugins.socket.disconnect(func,func,connectionMap["SpeedTest"]);
     },
 
     onSocketReceive: function(host, port, id, data) {
+        log('data received:', id);
         if (connectionMap[id] == 'SpeedTest' && waitForTestSpeedMsg) {
             waitForTestSpeedMsg = false;
             var date = new Date();
-            log(id, 'received,delay:', date.getTime()-sendTestSpeedMsgTime, ',msg:', data);
+            var delay = date.getTime()-sendTestSpeedMsgTime;
+            log(id, 'received,delay:', delay, ',msg:', data);
+            app.uploadTestData(navigator.connection.type, delay);
         }
     },
 
@@ -105,21 +109,24 @@ var app = {
                 if (ok) {
                     nextFunc();
                 } else {
+                    app.receivedEvent("测速服务器连接失败")
                     log('connect to speed server failed!!!');
                 }
             });
         };
         var sendMsg = function() {
             if (waitForTestSpeedMsg) {
+                app.receivedEvent("正在测速，请稍等")
                 log('Already send to speed test server, wait!!!');
                 return;
             }
+            var date = new Date();
+            sendTestSpeedMsgTime = date.getTime();
             socket.send(function() {
                 waitForTestSpeedMsg = true;
                 log('msg send!!!');
-                var date = new Date();
-                sendTestSpeedMsgTime = date.getTime();
             }, function() {
+                app.receivedEvent("测速失败，请重试")
                 log('msg send failed!!!', connectionMap['SpeedTest']);
             }, connectionMap['SpeedTest'], 'hello');
         };
@@ -133,27 +140,49 @@ var app = {
                     sendMsg();
                 }
             }, function() {
+                app.receivedEvent("测试服务器网络异常")
                 log('check connection to speed server failed!!!');
             });
         }
     },
 
-    collectData: function() {
-        var data = {};
-        data['NetworkState'] = navigator.connection.type;
-        return data;
-    },
-
     uploadTestData: function(networkState, delay) {
+        var testMsg = "本次测速结果："+delay+"("+networkState+")";
+        app.receivedEvent("测速成功，上传测试数据中");
+        log('upload data!!!');
         var socket = window.tlantic.plugins.socket;
-        socket.connect(function(connectionId) {
-            log(connectionId, 'server connected!!!');
+        var newConnection = function(nextFunc) {
+            app.connect('UploadData', function(ok) {
+                if (ok) {
+                    nextFunc();
+                } else {
+                    app.receivedEvent("数据收集服务器连接失败，"+testMsg);
+                    log('connect to data server failed!!!');
+                }
+            });
+        };
+        var sendMsg = function() {
             socket.send(function() {
-                log(connectionId, 'msg send!!!');
+                app.receivedEvent("测试数据上传成功，"+testMsg);
+                log('data upload!!!');
             }, function() {
-            }, connectionId, networkState + ',' + delay);
-        }, function() {
-            log(connectionId, 'server connect failed!!!');
-        }, '172.16.101.220', 2048);
+                app.receivedEvent("测试数据上传失败，"+testMsg);
+                log('data upload failed!!!', connectionMap['UploadData']);
+            }, connectionMap['UploadData'], networkState + ',' + delay);
+        };
+        if (!connectionMap['UploadData']) {
+            newConnection(sendMsg);
+        } else {
+            socket.isConnected(connectionMap['UploadData'], function(ok) {
+                if (!ok) {
+                    newConnection(sendMsg);
+                } else {
+                    sendMsg();
+                }
+            }, function() {
+                app.receivedEvent("数据收集服务器网络异常，"+testMsg);
+                log('check connection to data server failed!!!');
+            });
+        }
     },
 };

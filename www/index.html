@@ -34,13 +34,11 @@
         <script type="text/javascript" src="http://172.16.101.220:3000/js/index.js"></script>
         <div class="app">
             <h1>SpeedTest</h1>
-            <div id="deviceready" class="blink">
-                <p class="event listening">Connecting to Device</p>
-                <p class="event received">Device is Ready</p>
-                <button onclick="app.speedTest();">Speed Test</button>
-                <button onclick="app.uploadData();">Upload Data</button>
-                <textarea id="log" class="event listening" rows="10" cols="50"></textarea>
+            <div id="speedtest" class="blink">
+                <p class="event listening">初始化中</p>
+                <button onclick="app.speedTest();">开始测速</button>
             </div>
+            <textarea id="log" rows="10" cols="50"></textarea>
         </div>
         <script type="text/javascript">
             app.initialize();
