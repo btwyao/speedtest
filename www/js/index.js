@@ -28,8 +28,10 @@ for (var i=0; i<50; i++) {
     speedTestMsg = speedTestMsg + "hello";
 }
 
-var waitForTestSpeedMsg = false;
 var sendTestSpeedMsgTime = 0;
+var speedTestCnt = 0;
+var maxSpeedTestCnt = 20;
+var delayList = new Array();
 
 var log = function() {
     var params = "";
@@ -59,7 +61,7 @@ var app = {
     },
     // deviceready Event Handler
     onDeviceReady: function() {
-        app.receivedEvent("准备就绪")
+        app.receivedEvent("准备就绪");
         window.tlantic.plugins.socket.receive = app.onSocketReceive;
         app.connect('SpeedTest', function(ok) {
         });
@@ -82,15 +84,35 @@ var app = {
     },
 
     onSocketReceive: function(host, port, id, data) {
-        log('data received:', id);
-        if (connectionMap[id] == 'SpeedTest' && waitForTestSpeedMsg) {
-            waitForTestSpeedMsg = false;
+        if (connectionMap[id] == 'SpeedTest') {
             var date = new Date();
             var delay = date.getTime()-sendTestSpeedMsgTime;
-            var envElement = document.getElementById("selectenv");
-            var env = envElement.options[envElement.selectedIndex].getAttribute("value");
             log(id, 'received,delay:', delay);
-            app.uploadTestData(navigator.connection.type, delay, env);
+            speedTestCnt += 1;
+            delayList.push(delay);
+            if (speedTestCnt >= maxSpeedTestCnt) {
+                speedTestCnt = 0;
+                var length = delayList.length;
+                var minDelay, avrDelay, maxDelay;
+                minDelay=avrDelay=maxDelay=delayList[0];
+                for (var i=0;i<length;i++) {
+                    var delay = delayList.pop();
+                    avrDelay+=delay;
+                    if (delay < minDelay)
+                        minDelay = delay;
+                    if (delay > maxDelay)
+                        maxDelay = delay;
+                }
+                avrDelay/=length;
+                var networkState = navigator.connection.type;
+                var envElement = document.getElementById("selectenv");
+                var env = envElement.options[envElement.selectedIndex].getAttribute("value");
+                var testMsg = "测速结果：平均"+avrDelay+"ms,最高"+maxDelay+"ms,最低"+minDelay+"ms("+networkState+")";
+                app.receivedEvent(testMsg);
+                app.uploadTestData(networkState, avrDelay, env);
+            } else {
+                app.speedTestCore();
+            }
         }
     },
 
@@ -117,31 +139,32 @@ var app = {
 
     speedTest: function() {
         log('speed test!!!');
+        if (speedTestCnt > 0) {
+            app.receivedEvent("正在测速，请稍等");
+            return;
+        }
+        app.speedTestCore();
+    },
+
+    speedTestCore: function() {
         var socket = window.tlantic.plugins.socket;
         var newConnection = function(nextFunc) {
             app.connect('SpeedTest', function(ok) {
                 if (ok) {
                     nextFunc();
                 } else {
-                    app.receivedEvent("测速服务器连接失败")
+                    app.receivedEvent("测速服务器连接失败");
                     log('connect to speed server failed!!!');
                 }
             });
         };
         var sendMsg = function() {
-            if (waitForTestSpeedMsg) {
-                app.receivedEvent("正在测速，请稍等")
-                log('Already send to speed test server, wait!!!');
-                return;
-            }
             log('msg send!!!');
             var date = new Date();
             sendTestSpeedMsgTime = date.getTime();
-            waitForTestSpeedMsg = true;
             socket.send(function() {
             }, function(errMsg) {
-                waitForTestSpeedMsg = false;
-                app.receivedEvent("测速失败，请重试")
+                app.receivedEvent("测速失败，请重试");
                 log('msg send failed!!!'+errMsg, connectionMap['SpeedTest']);
             }, connectionMap['SpeedTest'], speedTestMsg);
         };
@@ -155,7 +178,7 @@ var app = {
                     sendMsg();
                 }
             }, function(errMsg) {
-                app.receivedEvent("测试服务器网络异常")
+                app.receivedEvent("测试服务器网络异常");
                 log('check connection to speed server failed!!!');
             });
         }
@@ -163,7 +186,6 @@ var app = {
 
     uploadTestData: function(networkState, delay, env) {
         var testMsg = "本次测速结果："+delay+"ms("+networkState+")";
-        app.receivedEvent("测速成功，上传测试数据中");
         log('upload data!!!');
         var socket = window.tlantic.plugins.socket;
         var newConnection = function(nextFunc) {
@@ -178,7 +200,6 @@ var app = {
         };
         var sendMsg = function() {
             socket.send(function() {
-                app.receivedEvent("测试数据上传成功，"+testMsg);
                 log('data upload!!!');
             }, function() {
                 app.receivedEvent("测试数据上传失败，"+testMsg);
