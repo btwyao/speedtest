@@ -92,9 +92,10 @@ var app = {
             delayList.push(delay);
             if (speedTestCnt >= maxSpeedTestCnt) {
                 speedTestCnt = 0;
+                var avrDelay = 0;
                 var length = delayList.length;
-                var minDelay, avrDelay, maxDelay;
-                minDelay=avrDelay=maxDelay=delayList[0];
+                var minDelay, maxDelay;
+                minDelay=maxDelay=delayList[0];
                 for (var i=0;i<length;i++) {
                     var delay = delayList.pop();
                     avrDelay+=delay;
